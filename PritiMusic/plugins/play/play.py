@@ -184,9 +184,7 @@ async def play_commnd(
                 return await mystic.edit_text("**🚫 sᴇᴄᴜʀɪᴛʏ ᴀʟᴇʀᴛ: ᴀᴅᴜʟᴛ ᴄᴏɴᴛᴇɴᴛ ɪs sᴛʀɪᴄᴛʟʏ ᴘʀᴏʜɪʙɪᴛᴇᴅ!**")
 
             try:
-                # ✅ FIX: Added `client` parameter so arguments align correctly
                 await stream(
-                    client,
                     _,
                     mystic,
                     user_id,
@@ -239,9 +237,7 @@ async def play_commnd(
                 return await mystic.edit_text("**🚫 sᴇᴄᴜʀɪᴛʏ ᴀʟᴇʀᴛ: ᴀᴅᴜʟᴛ ᴄᴏɴᴛᴇɴᴛ ɪs sᴛʀɪᴄᴛʟʏ ᴘʀᴏʜɪʙɪᴛᴇᴅ!**")
 
             try:
-                # ✅ FIX: Added `client` parameter so arguments align correctly
                 await stream(
-                    client,
                     _,
                     mystic,
                     user_id,
@@ -440,9 +436,7 @@ async def play_commnd(
                     )
                 )
             try:
-                # ✅ FIX: Added `client` parameter so arguments align correctly
                 await stream(
-                    client,
                     _,
                     mystic,
                     user_id,
@@ -475,9 +469,7 @@ async def play_commnd(
                 return await mystic.edit_text(_["general_2"].format(type(e).__name__))
             await mystic.edit_text(_["str_2"])
             try:
-                # ✅ FIX: Added `client` parameter so arguments align correctly
                 await stream(
-                    client,
                     _,
                     mystic,
                     message.from_user.id,
@@ -559,9 +551,7 @@ async def play_commnd(
                     reply_markup=InlineKeyboardMarkup(buttons),
                 )
         try:
-            # ✅ FIX: Added `client` parameter so arguments align correctly
             await stream(
-                client,
                 _,
                 mystic,
                 user_id,
@@ -697,9 +687,7 @@ async def play_music(client, CallbackQuery, _):
     video = True if mode == "v" else None
     ffplay = True if fplay == "f" else None
     try:
-        # ✅ FIX: Added `client` parameter so arguments align correctly
         await stream(
-            client,
             _,
             mystic,
             CallbackQuery.from_user.id,
@@ -707,7 +695,7 @@ async def play_music(client, CallbackQuery, _):
             chat_id,
             user_name,
             CallbackQuery.message.chat.id,
-            video,
+            video=video,
             streamtype="youtube",
             forceplay=ffplay,
         )
@@ -800,9 +788,7 @@ async def play_playlists_command(client, CallbackQuery, _):
         except:
             return await mystic.edit_text(_["play_3"])
     try:
-        # ✅ FIX: Added `client` parameter so arguments align correctly
         await stream(
-            client,
             _,
             mystic,
             user_id,
@@ -810,7 +796,7 @@ async def play_playlists_command(client, CallbackQuery, _):
             chat_id,
             user_name,
             CallbackQuery.message.chat.id,
-            video,
+            video=video,
             streamtype="playlist",
             spotify=spotify,
             forceplay=ffplay,
