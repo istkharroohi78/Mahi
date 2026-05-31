@@ -49,6 +49,13 @@ CLONES = set()
 ACTIVE_CLONES = {} 
 CLONE_LIMIT = 500 
 
+FOOTER = (
+    "\n\n━━━━━━━━━━━━━━━━━━\n"
+    "✨ **Start customizing your bot now! join **\n"
+    "📢 Update: @Betabot_hub\n"
+    "🌚 Support: @Betabot_support"
+)
+
 try:
     from config import BOT_LINK
 except ImportError:
@@ -144,6 +151,7 @@ async def clone_txt(client, message, _):
                         f"**sᴏʀʀʏ, ᴏᴜʀ sᴇʀᴠᴇʀ ᴄᴀɴ ᴏɴʟʏ ʜᴀɴᴅʟᴇ {CLONE_LIMIT} ᴄʟᴏɴᴇs.**\n"
                         "**ᴛʜᴇ ʟɪᴍɪᴛ ɪs ғᴜʟʟ ɴᴏᴡ.**\n\n"
                         "**ᴘʟᴇᴀsᴇ ᴄᴏɴᴛᴀᴄᴛ ᴏᴡɴᴇʀ ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ.**"
+                        + FOOTER
                     ),
                     reply_markup=InlineKeyboardMarkup(
                         [[InlineKeyboardButton("ɢᴏ ᴀɴᴅ ᴄʟᴏɴᴇ", url=BOT_LINK)]]
@@ -151,7 +159,7 @@ async def clone_txt(client, message, _):
                     has_spoiler=True
                 )
             except Exception as e:
-                await message.reply_text("**⚠️ Clone Limit Reached.**")
+                await message.reply_text("**⚠️ Clone Limit Reached.**" + FOOTER)
             return
     # --- 🔥 CLONE LIMIT LOGIC END ---
 
@@ -246,7 +254,7 @@ async def clone_txt(client, message, _):
 
             set_bot_commands()
 
-            await mi.edit_text(_["C_B_H_6"].format(bot.username))
+            await mi.edit_text(_["C_B_H_6"].format(bot.username) + FOOTER)
         except BaseException as e:
             logging.exception("Error while cloning bot.")
             # ✅ REPLACED HARDCODED USERNAME WITH CONFIG VARIABLE
@@ -504,7 +512,7 @@ async def my_cloned_bots(client, message, _):
             cloned_bots.append(bot)
         
         if not cloned_bots:
-            await message.reply_text(_["C_B_H_16"])
+            await message.reply_text(_["C_B_H_16"] + FOOTER)
             return
         
         total_clones = len(cloned_bots)
@@ -514,7 +522,7 @@ async def my_cloned_bots(client, message, _):
             text += f"**ʙᴏᴛ ɴᴀᴍᴇ:** {bot['name']}\n"
             text += f"**ʙᴏᴛ ᴜsᴇʀɴᴀᴍᴇ:** @{bot['username']}\n\n"
         
-        await message.reply_text(text)
+        await message.reply_text(text + FOOTER)
     except Exception as e:
         logging.exception(e)
         await message.reply_text("An error occurred while fetching your cloned bots.")
