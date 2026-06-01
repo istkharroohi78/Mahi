@@ -3,6 +3,7 @@ import random
 import math
 from pyrogram.types import CallbackQuery, InputMediaPhoto, InputMediaVideo, InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram import filters
+from pyrogram.errors import WebpageMediaEmpty # IMPORT ERROR HANDLER
 
 from PritiMusic import YouTube, app
 from PritiMusic.core.call import Lucky
@@ -104,23 +105,27 @@ async def support_page_cb(client, CallbackQuery, _):
         reply_markup=InlineKeyboardMarkup(custom_support_buttons)
     )
 
-# --- SOURCE PAGE (VIDEO & TEXT SPOILER FIXED) ---
+# --- SOURCE PAGE (FIXED WEBPAGE_MEDIA_EMPTY) ---
 @app.on_callback_query(filters.regex("gib_source"))
 async def gib_repo_callback(_, callback_query):
-    await callback_query.edit_message_media(
-        media=InputMediaVideo(
-            media="https://files.catbox.moe/p8t5d8.mp4", 
-            caption="REPO = ||ᴘʜᴇʟᴀ ᴅᴇᴠɪʟ ᴋᴏ ᴘᴀᴘᴀ ʙᴏʟ ᴄʜᴀʟ ʙᴏʟ😎||"
-        ),
-        reply_markup=InlineKeyboardMarkup(
-            [
+    try:
+        await callback_query.edit_message_media(
+            media=InputMediaVideo(
+                media="https://files.catbox.moe/p8t5d8.mp4", 
+                caption="REPO = ||ᴘʜᴇʟᴀ ᴅᴇᴠɪʟ ᴋᴏ ᴘᴀᴘᴀ ʙᴏʟ ᴄʜᴀʟ ʙᴏʟ😎||"
+            ),
+            reply_markup=InlineKeyboardMarkup(
                 [
-                    InlineKeyboardButton(text="• ʙᴀᴄᴋ •", callback_data="settingsback_helper"),
-                    InlineKeyboardButton(text="• ᴄʟᴏsᴇ •", callback_data="close")
+                    [
+                        InlineKeyboardButton(text="• ʙᴀᴄᴋ •", callback_data="settingsback_helper"),
+                        InlineKeyboardButton(text="• ᴄʟᴏsᴇ •", callback_data="close")
+                    ]
                 ]
-            ]
-        ),
-    )
+            ),
+        )
+    except WebpageMediaEmpty:
+        # Fallback agar video load na ho paye
+        await callback_query.answer("Video load nahi ho payi, baad mein try karein.", show_alert=True)
 
 @app.on_callback_query(filters.regex("unban_assistant"))
 async def unban_assistant(_, callback: CallbackQuery):
@@ -132,7 +137,7 @@ async def unban_assistant(_, callback: CallbackQuery):
     except Exception:
         await callback.answer("Failed to unban. Give me Admin permissions.", show_alert=True)
 
-# --- ADMIN COMMANDS ---
+# --- ADMIN COMMANDS (FIXED LIST INDEX OUT OF RANGE) ---
 @app.on_callback_query(filters.regex("ADMIN") & ~BANNED_USERS)
 @languageCB
 async def del_back_playlist(client, CallbackQuery, _):
@@ -219,6 +224,9 @@ async def del_back_playlist(client, CallbackQuery, _):
         await CallbackQuery.message.delete()
     elif command == "Skip" or command == "Replay":
         check = db.get(chat_id)
+        if not check or len(check) == 0:
+            return await CallbackQuery.answer("Queue khali hai ya list clear ho chuki hai!", show_alert=True)
+            
         if command == "Skip":
             txt = f"➻ sᴛʀᴇᴀᴍ sᴋɪᴩᴩᴇᴅ 🎄\n│ \n└ʙʏ : {mention} 🥀"
             try:
@@ -267,8 +275,10 @@ async def del_back_playlist(client, CallbackQuery, _):
             caption=_["stream_1"].format(f"https://t.me/{app.username}?start=info_{videoid}", title[:23], duration, user),
             reply_markup=InlineKeyboardMarkup(button),
         )
-        db[chat_id][0]["mystic"] = run
-        db[chat_id][0]["markup"] = "tg"
+        # Yahan safe update ho raha hai
+        if chat_id in db and len(db[chat_id]) > 0:
+            db[chat_id][0]["mystic"] = run
+            db[chat_id][0]["markup"] = "tg"
         await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
 
 async def markup_timer():
