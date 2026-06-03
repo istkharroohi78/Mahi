@@ -5,7 +5,8 @@ import logging
 from pyrogram import filters, Client
 from pyrogram.enums import ChatType, ParseMode
 from pyrogram.types import InlineKeyboardMarkup, Message, InputMediaPhoto, InputMediaVideo
-from py_yt import VideosSearch
+# 👇 Yahan nayi library aa gayi hai
+from youtubesearchpython.__future__ import VideosSearch
 
 import config
 from PritiMusic import app
