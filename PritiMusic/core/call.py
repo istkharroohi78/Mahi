@@ -392,11 +392,60 @@ class Call(PyTgCalls):
                 loop = loop - 1
                 await set_loop(chat_id, loop)
             await auto_clean(popped)
+            
+            # ⬇️ --- AUTOPLAY LOGIC INJECTED HERE --- ⬇️
             if not check:
+                from PritiMusic.utils.database.autoplay import is_autoplay_group
+                
+                # Check karo autoplay on hai ya nahi
+                auto_on = await is_autoplay_group(chat_id)
+                if auto_on and popped:
+                    try:
+                        from youtubesearchpython.__future__ import VideosSearch
+                        import random
+                        
+                        # Pichle gaane ka title uthao
+                        last_title = popped.get("title", "New trending songs")
+                        
+                        # YouTube par usse milte-julte 15 gaane search karo
+                        search = VideosSearch(last_title, limit=15)
+                        result = await search.next()
+                        
+                        if result and "result" in result:
+                            last_vidid = popped.get("vidid")
+                            # Pichla gaana repeat na ho isliye use hata do
+                            choices = [res for res in result["result"] if res["id"] != last_vidid]
+                            
+                            if choices:
+                                # Baki bache gaano mein se koi ek random select karo
+                                next_track = random.choice(choices)
+                                next_vidid = next_track["id"]
+                                
+                                # Chupchap queue (database) mein naya gaana daal do
+                                db[chat_id].append({
+                                    "vidid": next_vidid,
+                                    "title": next_track["title"],
+                                    "by": "Autoplay 🟢",
+                                    "chat_id": chat_id,
+                                    "file": f"vid_{next_vidid}",
+                                    "streamtype": popped.get("streamtype", "audio"), 
+                                    "user_id": app.id if app else 0,
+                                    "seconds": 0, 
+                                    "dur": next_track.get("duration", "Unknown"),
+                                    "old_dur": next_track.get("duration", "Unknown"),
+                                    "old_second": 0,
+                                    "client": popped.get("client")
+                                })
+                    except Exception as e:
+                        LOGGER(__name__).error(f"Autoplay Error: {e}")
+
+            if not check: 
                 await _clear_(chat_id)
                 if chat_id in self.active_clients:
                     del self.active_clients[chat_id]
                 return await client.leave_group_call(chat_id)
+            # ⬆️ --- AUTOPLAY LOGIC END --- ⬆️
+            
         except:
             try:
                 await _clear_(chat_id)
