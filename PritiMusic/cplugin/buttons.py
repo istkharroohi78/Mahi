@@ -57,7 +57,7 @@ def stream_markup_timer(_, chat_id, played, dur):
     if 0 <= umm <= 10: bar = "◉—————————"
     elif 10 < umm <= 20: bar = "—◉————————"
     elif 20 < umm <= 30: bar = "——◉———————"
-    elif 30 < umm <= 40: bar = "———◉——————"
+    elif 30 < umm <= 40: bar = "———◉————--"
     elif 40 < umm <= 50: bar = "————◉—————"
     elif 50 < umm <= 60: bar = "—————◉————"
     elif 60 < umm <= 70: bar = "——————◉———"
@@ -78,6 +78,10 @@ def stream_markup_timer(_, chat_id, played, dur):
             styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
             styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
         ],
+        # ✅ Autoplay placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
+        ],
         [clone_button()],
         [
             styled_button(text=_["CLOSE_BUTTON"], callback_data="close", style=ButtonStyle.DANGER),
@@ -92,6 +96,10 @@ def stream_markup(_, chat_id):
             styled_button(text="▷", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS),
             styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
             styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
+        ],
+        # ✅ Autoplay placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
         ],
         [clone_button()],
         [
@@ -195,6 +203,10 @@ def telegram_markup(_, chat_id):
             ),
             styled_button(text=_["CLOSEMENU_BUTTON"], callback_data="close", style=ButtonStyle.DANGER),
         ],
+        # ✅ Autoplay placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
+        ],
         [clone_button()],
     ]
     return buttons
@@ -230,6 +242,10 @@ def queue_markup(_, videoid, chat_id, bot_username):
                 text="ʀᴇᴘʟᴀʏ ↺", callback_data=f"ADMIN Replay|{chat_id}", style=ButtonStyle.PRIMARY
             ),
         ],
+        # ✅ Autoplay placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
+        ],
         [clone_button()],
         [
             styled_button(
@@ -255,6 +271,10 @@ def stream_markup2(_, chat_id, bot_username):
             styled_button(text="▷", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS),
             styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
             styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
+        ],
+        # ✅ Added & Placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
         ],
         [clone_button()],
         [
@@ -299,6 +319,10 @@ def stream_markup_timer2(_, chat_id, played, dur):
             styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
             styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
         ],
+        # ✅ Added & Placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
+        ],
         [clone_button()],
         [
             styled_button(text=_["CLOSEMENU_BUTTON"], callback_data="close", style=ButtonStyle.DANGER),
@@ -337,6 +361,10 @@ def panel_markup_1(_, videoid, chat_id, bot_username):
                 callback_data=f"ADMIN 2|{chat_id}",
                 style=ButtonStyle.PRIMARY
             ),
+        ],
+        # ✅ Autoplay placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
         ],
         [clone_button()],
         [
@@ -393,6 +421,10 @@ def panel_markup_2(_, videoid, chat_id, bot_username):
                 style=ButtonStyle.PRIMARY
             ),
         ],
+        # ✅ Added & Placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
+        ],
         [clone_button()],
         [
             styled_button(
@@ -435,6 +467,10 @@ def panel_markup_3(_, videoid, chat_id):
                 callback_data=f"SpeedUP {chat_id}|2.0",
                 style=ButtonStyle.PRIMARY
             ),
+        ],
+        # ✅ Added & Placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
         ],
         [clone_button()],
         [
@@ -495,9 +531,10 @@ def panel_markup_4(_, vidid, chat_id, played, dur):
             styled_button(
                 text="▷ ʀᴇsᴜᴍᴇ", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS
             ),
-            styled_button(
-                text="ʀᴇᴘʟᴀʏ ↺", callback_data=f"ADMIN Replay|{chat_id}", style=ButtonStyle.PRIMARY
-            ),
+        ],
+        # ✅ Autoplay placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
         ],
         [clone_button()],
         [
@@ -539,6 +576,10 @@ def panel_markup_5(_, videoid, chat_id, bot_username):
                 text="ʀᴇᴘʟᴀʏ", callback_data=f"ADMIN Replay|{chat_id}", style=ButtonStyle.PRIMARY
             ),
         ],
+        # ✅ Autoplay placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
+        ],
         [clone_button()],
         [
             styled_button(
@@ -562,6 +603,10 @@ def panel_markup_clone(_, vidid, chat_id):
             styled_button(text="▷", callback_data=f"ADMIN Resume|{chat_id}", style=ButtonStyle.SUCCESS),
             styled_button(text="II", callback_data=f"ADMIN Pause|{chat_id}", style=ButtonStyle.DANGER),
             styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
+        ],
+        # ✅ Autoplay placed right above Clone button
+        [
+            styled_button(text="ᴀᴜᴛᴏᴘʟᴀʏ", callback_data=f"ADMIN Autoplay|{chat_id}", style=ButtonStyle.PRIMARY)
         ],
         [clone_button()],
         [
