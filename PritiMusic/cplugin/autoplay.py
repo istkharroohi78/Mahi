@@ -22,13 +22,13 @@ async def autoplay_mode_clone(client: Client, message: Message, _, chat_id):
         # Pehle ON tha, ab OFF kar rahe hain
         await remove_autoplay_group(chat_id)
         reply_markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton(text="Autoplay : Disabled 🔴", callback_data="dummy_btn")]
+            [InlineKeyboardButton(text="Autoplay : Disabled 🔴", callback_data=f"ADMIN Autoplay|{chat_id}")]
         ])
         return await message.reply_text(text, reply_markup=reply_markup)
     else:
         # Pehle OFF tha, ab ON kar rahe hain
         await add_autoplay_group(chat_id)
         reply_markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton(text="Autoplay : Enabled 🟢", callback_data="dummy_btn")]
+            [InlineKeyboardButton(text="Autoplay : Enabled 🟢", callback_data=f"ADMIN Autoplay|{chat_id}")]
         ])
         return await message.reply_text(text, reply_markup=reply_markup)
