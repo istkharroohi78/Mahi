@@ -39,6 +39,7 @@ from PritiMusic.utils.inline.play import stream_markup, telegram_markup
 from PritiMusic.utils.stream.autoclear import auto_clean
 from strings import get_string
 from PritiMusic.utils.thumbnails import get_thumb
+from PritiMusic.utils.logger import autoplay_log # Added autoplay log import
 
 autoend = {}
 counter = {}
@@ -439,6 +440,11 @@ class Call(PyTgCalls):
                                     "old_second": 0,
                                     "client": popped.get("client")
                                 })
+                                # Call Autoplay Log
+                                try:
+                                    await autoplay_log(app, chat_id, next_track["title"])
+                                except:
+                                    pass
                     except Exception as e:
                         LOGGER(__name__).error(f"Autoplay Error: {e}")
 
@@ -461,8 +467,14 @@ class Call(PyTgCalls):
             queued = check[0]["file"]
             language = await get_lang(chat_id)
             _ = get_string(language)
-            title = (check[0]["title"]).title()
-            user = check[0]["by"]
+            # Add safety check for title
+            raw_title = check[0].get("title")
+            title = str(raw_title).title() if raw_title else "Unknown Title"
+            
+            # Add safety check for user
+            raw_user = check[0].get("by")
+            user = str(raw_user) if raw_user else "Unknown User"
+            
             user_id = check[0].get("user_id", 0) # Safely fetch user_id for get_thumb
             original_chat_id = check[0]["chat_id"]
             streamtype = check[0]["streamtype"]
