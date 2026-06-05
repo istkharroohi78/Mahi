@@ -393,6 +393,7 @@ class Call(PyTgCalls):
             await auto_clean(popped)
             
             # ⬇️ --- VIVAAN DUAL-FALLBACK AUTOPLAY LOGIC --- ⬇️
+            # This logic ONLY executes when the queue is empty, i.e., Autoplay is needed.
             if not check:
                 from PritiMusic.utils.database.autoplay import is_autoplay_group
                 
@@ -403,18 +404,19 @@ class Call(PyTgCalls):
                     title_lower = str(raw_title).lower()
                     last_vidid = str(popped.get("vidid", ""))
 
-                    # Phase 1: Smart Language Autoplay
+                    # Phase 1: Smart Language Autoplay with Strict Filters
                     try:
                         from youtubesearchpython.__future__ import VideosSearch
                         
+                        # Optimized queries to force single official songs
                         lang_pools = {
-                            "Hindi": ["latest hindi hit songs", "bollywood romantic audio hits", "hindi sad songs official audio", "trending bollywood tracks"],
-                            "Punjabi": ["latest punjabi hit tracks", "punjabi pop party songs", "trending punjabi single"],
-                            "Bhojpuri": ["latest bhojpuri non stop hits", "bhojpuri mp3 audio songs", "trending bhojpuri dj remix"],
-                            "Haryanvi": ["latest haryanvi songs hits", "haryanvi dance mix audio"],
-                            "Tamil": ["latest tamil kollywood hits", "tamil romantic melodies audio"],
-                            "Telugu": ["latest telugu tollywood hits", "telugu non stop melody songs"],
-                            "English": ["global top english hits", "billboard hot 100 english pop"]
+                            "Hindi": ["hindi single track official video", "bollywood latest lyrical song", "trending hindi song official"],
+                            "Punjabi": ["latest punjabi single official video", "punjabi trending track lyrical"],
+                            "Bhojpuri": ["bhojpuri latest single video song", "bhojpuri trending song official"],
+                            "Haryanvi": ["haryanvi single track official", "latest haryanvi video song"],
+                            "Tamil": ["tamil latest single official video", "kollywood trending song lyrical"],
+                            "Telugu": ["telugu tollywood latest single song", "telugu lyrical video official"],
+                            "English": ["english pop single official music video", "trending english lyrical song"]
                         }
 
                         keywords_map = {
@@ -437,20 +439,36 @@ class Call(PyTgCalls):
                         result = await search.next()
                         
                         if result and result.get("result"):
-                            choices = [res for res in result["result"] if str(res.get("id")) != last_vidid]
-                            if choices:
-                                next_track = random.choice(choices)
-                                next_vidid = str(next_track.get("id") or "")
-                                next_title = str(next_track.get("title") or "Unknown Title").title()
-                                next_dur = str(next_track.get("duration") or "0:00")
+                            valid_choices = []
+                            for res in result["result"]:
+                                if str(res.get("id")) == last_vidid:
+                                    continue
                                 
-                                duration_sec = 0
+                                # STRICT AUTOPLAY DURATION CHECKING
+                                next_dur = str(res.get("duration") or "0:00")
+                                dur_sec = 0
                                 if next_dur and ":" in next_dur:
                                     parts = next_dur.split(":")
-                                    if len(parts) == 2:
-                                        duration_sec = int(parts[0]) * 60 + int(parts[1])
-                                    elif len(parts) == 3:
-                                        duration_sec = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+                                    try:
+                                        if len(parts) == 2:
+                                            dur_sec = int(parts[0]) * 60 + int(parts[1])
+                                        elif len(parts) == 3:
+                                            dur_sec = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+                                    except ValueError:
+                                        pass
+                                
+                                # Strict Limit ONLY for Autoplay: Accept songs between 30s and 15 mins (900s)
+                                if 30 <= dur_sec <= 900:
+                                    valid_choices.append((res, next_dur, dur_sec))
+                                    
+                            if valid_choices:
+                                chosen_tuple = random.choice(valid_choices)
+                                next_track = chosen_tuple[0]
+                                next_dur = chosen_tuple[1]
+                                duration_sec = chosen_tuple[2]
+                                
+                                next_vidid = str(next_track.get("id") or "")
+                                next_title = str(next_track.get("title") or "Unknown Title").title()
                                 
                                 db[chat_id].append({
                                     "vidid": next_vidid,
@@ -475,16 +493,14 @@ class Call(PyTgCalls):
                     except Exception as e:
                         LOGGER(__name__).warning(f"Smart Autoplay Error: {e}")
 
-                    # Phase 2: Native YouTube Recommendation Fallback
+                    # Phase 2: Native YouTube Recommendation Fallback (Also strictly capped)
                     if not success:
                         try:
-                            seed_seconds = int(popped.get("seconds") or 0)
-                            max_duration = min(max(seed_seconds * 3, 240), 900) if seed_seconds > 0 else None
-                            
+                            # Strict limit in fallback: 15 Minutes Maximum
                             recommendation = await YouTube.autoplay(
                                 last_vidid,
                                 raw_title,
-                                max_duration=max_duration,
+                                max_duration=900, 
                             )
                             if recommendation:
                                 db[chat_id].append({
@@ -521,6 +537,8 @@ class Call(PyTgCalls):
             except:
                 return
         else:
+            # THIS IS THE NORMAL QUEUE PROGRESSION LOGIC
+            # Normal user requests will flow through here without the 15-min limit!
             queued = check[0]["file"]
             language = await get_lang(chat_id)
             _ = get_string(language)
