@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import (
@@ -74,8 +75,9 @@ def PlayWrapper(command):
                 if "stream" in message.command:
                     return await message.reply_text(_["str_1"])
                 buttons = botplaylist_markup(_)
+                # 🚀 FIX: Apply random choice for list of images
                 return await message.reply_photo(
-                    photo=PLAYLIST_IMG_URL,
+                    photo=random.choice(PLAYLIST_IMG_URL) if isinstance(PLAYLIST_IMG_URL, list) else PLAYLIST_IMG_URL,
                     caption=_["play_18"],
                     reply_markup=InlineKeyboardMarkup(buttons),
                 )
@@ -196,6 +198,7 @@ def PlayWrapper(command):
 
     return wrapper
 
+
 def CPlayWrapper(command):
     async def wrapper(client, message):
         i = await client.get_me()
@@ -242,8 +245,9 @@ def CPlayWrapper(command):
                 if "stream" in message.command:
                     return await message.reply_text(_["str_1"])
                 buttons = botplaylist_markup(_)
+                # 🚀 FIX: Apply random choice for list of images
                 return await message.reply_photo(
-                    photo=PLAYLIST_IMG_URL,
+                    photo=random.choice(PLAYLIST_IMG_URL) if isinstance(PLAYLIST_IMG_URL, list) else PLAYLIST_IMG_URL,
                     caption=_["play_18"],
                     reply_markup=InlineKeyboardMarkup(buttons),
                 )
