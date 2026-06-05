@@ -132,25 +132,27 @@ async def ping_clone(client: Client, message: Message):
         f"๏ Disk: {disk}%"
     )
 
-    # Edit Message with Stats
+    markup = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Support", url=C_SUPPORT_CHAT)]]
+    )
+
+    # 🚀 FIXED: Zero Crash Edit Logic
     try:
-        await hmm.edit_caption(
-            caption=stats_text,
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [InlineKeyboardButton("Support", url=C_SUPPORT_CHAT)],
-                ]
-            ),
-        )
+        # Check if the sent message contains media
+        if hmm.photo or hmm.video or hmm.animation:
+            await hmm.edit_caption(
+                caption=stats_text,
+                reply_markup=markup,
+            )
+        else:
+            await hmm.edit_text(
+                text=stats_text,
+                reply_markup=markup,
+            )
     except Exception:
-        await hmm.edit_text(
-            text=stats_text,
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [InlineKeyboardButton("Support", url=C_SUPPORT_CHAT)],
-                ]
-            ),
-        )
+        # Agar user ne message delete kar diya ho ya server issue ho, toh error ignore karega
+        pass
+
 
 # =====================================================================
 # SETTINGS COMMANDS (Now Supports Adding Multiple)
