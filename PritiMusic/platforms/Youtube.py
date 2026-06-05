@@ -285,5 +285,66 @@ class YouTubeAPI:
         except Exception:
             return None, False
 
+    # ==========================================
+    # YAHAN ADD KIYA GAYA HAI NAYA AUTOPLAY FUNCTION
+    # ==========================================
+    async def autoplay(self, last_vidid: str, title: str, max_duration: int = None):
+        """
+        Custom Autoplay function to find the next best song based on the last played song.
+        """
+        try:
+            import random
+            
+            search_query = f"{title} official audio"
+            search = VideosSearch(search_query, limit=15)
+            result = await search.next()
+            
+            if not result or not result.get("result"):
+                return None
+                
+            valid_choices = []
+            
+            for res in result["result"]:
+                vidid = str(res.get("id"))
+                if vidid == last_vidid:
+                    continue
+                    
+                dur_str = str(res.get("duration", "0:00"))
+                dur_sec = 0
+                
+                if dur_str and ":" in dur_str:
+                    parts = dur_str.split(":")
+                    try:
+                        if len(parts) == 2:
+                            dur_sec = int(parts[0]) * 60 + int(parts[1])
+                        elif len(parts) == 3:
+                            dur_sec = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+                    except ValueError:
+                        pass
+                
+                if dur_sec < 30:
+                    continue
+                    
+                if max_duration and dur_sec > max_duration:
+                    continue
+                    
+                valid_choices.append({
+                    "vidid": vidid,
+                    "title": str(res.get("title", "Unknown Title")).title(),
+                    "duration_min": dur_str,
+                    "duration_sec": dur_sec
+                })
+                
+            if valid_choices:
+                return random.choice(valid_choices)
+                
+            return None
+            
+        except Exception as e:
+            import logging
+            LOGGER = logging.getLogger(__name__)
+            LOGGER.error(f"YouTube Autoplay Function Error: {e}")
+            return None
+
 
 YouTube = YouTubeAPI()
