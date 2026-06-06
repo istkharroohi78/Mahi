@@ -1,86 +1,141 @@
 import asyncio
 import os
 import re
-from typing import Union
 import yt_dlp
+import aiohttp
+import logging
+from typing import Union
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message
 from youtubesearchpython.__future__ import VideosSearch, Playlist
-import aiohttp
 
-API_URL = os.environ.get("SHRUTI_API_URL", "https://api.shrutibots.site")
-API_KEY = os.environ.get("SHRUTI_API_KEY", "ShrutiBotsC0WH1GowF2HkGoKv4F3y") 
+# ----------------- CONFIGURATION -----------------
 DOWNLOAD_DIR = "downloads"
+LOGGER = logging.getLogger(__name__)
+
+# ✅ ShrutiBots API Setup
+API_URL = os.environ.get("SHRUTI_API_URL", "https://api.shrutibots.site")
+API_KEY = os.environ.get("SHRUTI_API_KEY", "ShrutiBotsg3j1kfPzAV3zj6aoqnUr")
 
 def time_to_seconds(time):
     stringt = str(time)
     return sum(int(x) * 60 ** i for i, x in enumerate(reversed(stringt.split(":"))))
 
-async def download_song(link: str) -> str:
-    video_id = link.split("v=")[-1].split("&")[0] if "v=" in link else link
-    if not video_id or len(video_id) < 3:
+def get_safe_filename(title: str, default_id: str) -> str:
+    """Removes invalid characters from titles to prevent OS file creation errors."""
+    if not title:
+        return default_id
+    return re.sub(r'[\\/*?:"<>|]', "", title).strip()
+
+# ----------------- DOWNLOADERS -----------------
+
+# 🚀 FAST DOWNLOAD VIA SHRUTIBOTS API
+async def api_download(video_id: str, download_type: str, title: str = None) -> str:
+    if not API_URL or not API_KEY:
         return None
 
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    file_path = os.path.join(DOWNLOAD_DIR, f"{video_id}.mp3")
+    filename = get_safe_filename(title, video_id)
+    ext = "mp4" if download_type == "video" else "mp3"
+    file_path = os.path.join(DOWNLOAD_DIR, f"{filename}.{ext}")
+
     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
         return file_path
 
     try:
         async with aiohttp.ClientSession() as session:
+            # Shruti API Download Request
             async with session.get(
                 f"{API_URL}/download",
-                params={"url": video_id, "type": "audio", "api_key": API_KEY},
-                timeout=aiohttp.ClientTimeout(total=300)
-            ) as resp:
-                if resp.status != 200:
-                    return None
-                with open(file_path, "wb") as f:
-                    async for chunk in resp.content.iter_chunked(131072):
-                        f.write(chunk)
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-            return file_path
-        return None
-    except Exception:
-        if os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-            except Exception:
-                pass
-        return None
-
-async def download_video(link: str) -> str:
-    video_id = link.split("v=")[-1].split("&")[0] if "v=" in link else link
-    if not video_id or len(video_id) < 3:
-        return None
-
-    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    file_path = os.path.join(DOWNLOAD_DIR, f"{video_id}.mp4")
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        return file_path
-
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{API_URL}/download",
-                params={"url": video_id, "type": "video", "api_key": API_KEY},
+                params={"url": video_id, "type": "audio" if download_type == "audio" else "video", "api_key": API_KEY},
                 timeout=aiohttp.ClientTimeout(total=600)
             ) as resp:
                 if resp.status != 200:
+                    LOGGER.error(f"API Error: Status {resp.status}")
                     return None
+                
                 with open(file_path, "wb") as f:
                     async for chunk in resp.content.iter_chunked(131072):
                         f.write(chunk)
+                        
         if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
             return file_path
         return None
-    except Exception:
+    except Exception as e:
+        LOGGER.error(f"Shruti API Download Error: {e}")
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
-            except Exception:
+            except:
                 pass
         return None
+
+# 🛡️ FALLBACK METHOD (Jugaad)
+async def ytdl_fallback_download(link: str, download_type: str, title: str = None) -> str:
+    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+    video_id = link.split("v=")[-1].split("&")[0] if "v=" in link else link
+    filename = get_safe_filename(title, video_id)
+    ext = "mp4" if download_type == "video" else "mp3"
+    file_path = os.path.join(DOWNLOAD_DIR, f"{filename}.{ext}")
+
+    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+        return file_path
+
+    ydl_opts = {
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best' if download_type == "video" else 'bestaudio/best',
+        'outtmpl': file_path,
+        'quiet': True,
+        'no_warnings': True,
+    }
+    
+    if download_type == "audio":
+        ydl_opts['postprocessors'] = [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }]
+
+    try:
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).download([link]))
+        
+        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+            return file_path
+        return None
+    except Exception as e:
+        LOGGER.error(f"yt-dlp fallback error: {str(e)}")
+        return None
+
+# 🎧 MAIN AUDIO DOWNLOADER
+async def download_song(link: str, title: str = None) -> str:
+    video_id = link.split("v=")[-1].split("&")[0] if "v=" in link else link
+    if not video_id or len(video_id) < 3:
+        return None
+        
+    # Pehle Shruti API try karega
+    api_result = await api_download(video_id, "audio", title)
+    if api_result:
+        return api_result
+        
+    # Agar API server down hua, toh yt-dlp fallback use karega
+    return await ytdl_fallback_download(link, "audio", title)
+
+# 🎥 MAIN VIDEO DOWNLOADER
+async def download_video(link: str, title: str = None) -> str:
+    video_id = link.split("v=")[-1].split("&")[0] if "v=" in link else link
+    if not video_id or len(video_id) < 3:
+        return None
+
+    # Pehle Shruti API try karega
+    api_result = await api_download(video_id, "video", title)
+    if api_result:
+        return api_result
+        
+    # Agar API server down hua, toh yt-dlp fallback use karega
+    return await ytdl_fallback_download(link, "video", title)
+
+
+# ----------------- YOUTUBE API CLASS -----------------
 
 class YouTubeAPI:
     def __init__(self):
@@ -158,6 +213,7 @@ class YouTubeAPI:
         if "&" in link:
             link = link.split("&")[0]
         try:
+            # We don't have title context here by default, so it relies on video_id
             downloaded_file = await download_video(link)
             if downloaded_file:
                 return 1, downloaded_file
@@ -216,9 +272,9 @@ class YouTubeAPI:
             "quiet": True,
             "external_downloader": "aria2c",
             "external_downloader_args": [
-                "-x", "16",           
-                "-s", "16",           
-                "-k", "1M",           
+                "-x", "16",            
+                "-s", "16",            
+                "-k", "1M",            
                 "--allow-piece-length-change=true"
             ]
         }
@@ -277,14 +333,19 @@ class YouTubeAPI:
         if videoid:
             link = self.base + link
         try:
+            # Type check: if title passed is a boolean, discard it to avoid stringified "True"/"False" files
+            file_title = title if isinstance(title, str) else None
+
             if video:
-                downloaded_file = await download_video(link)
+                downloaded_file = await download_video(link, title=file_title)
             else:
-                downloaded_file = await download_song(link)
+                downloaded_file = await download_song(link, title=file_title)
+                
             if downloaded_file:
                 return downloaded_file, True
             return None, False
-        except Exception:
+        except Exception as e:
+            LOGGER.error(f"Error in YouTubeAPI.download: {e}")
             return None, False
 
     async def autoplay(self, last_vidid: str, title: str, max_duration: int = None):
@@ -370,9 +431,8 @@ class YouTubeAPI:
             return None
             
         except Exception as e:
-            import logging
-            LOGGER = logging.getLogger(__name__)
             LOGGER.error(f"YouTube Autoplay Function Error: {e}")
             return None
+
 
 YouTube = YouTubeAPI()
