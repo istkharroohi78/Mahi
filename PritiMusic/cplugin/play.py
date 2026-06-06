@@ -193,7 +193,7 @@ async def update_clone_activity(username):
         [
             "play", "vplay", "cplay", "cvplay", "playforce", "vplayforce", "cplayforce", "cvplayforce"
         ],
-        prefixes=["/", "!", "%", "", ".", "@", "#"],
+        prefixes=["/", "!", "%", ".", "@", "#"], # ✅ FIXED: Khaali string "" yahan se hata di gayi hai
     )
     & filters.group
     & ~BANNED_USERS
@@ -1109,4 +1109,3 @@ async def stream(client, _, mystic, user_id, result, chat_id, user_name, origina
             db[chat_id][0]["mystic"] = run
             db[chat_id][0]["markup"] = "tg"
             await mystic.delete()
-            
