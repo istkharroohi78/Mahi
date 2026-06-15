@@ -9,8 +9,7 @@ from pyrogram import Client
 from pyrogram.types import InlineKeyboardMarkup
 from pyrogram.enums import ParseMode
 
-# 🛑 FIX: Added 'filters' from pytgcalls for v2.3.0+ event handling
-from pytgcalls import PyTgCalls, filters
+from pytgcalls import PyTgCalls
 from pytgcalls.types import Update, MediaStream, AudioQuality, VideoQuality
 
 import config
@@ -267,22 +266,23 @@ class Call(PyTgCalls):
                 assistant_to_join = PyTgCalls(userbot, cache_duration=100)
                 await assistant_to_join.start()
                 
-                # 🛑 FIX: PyTgCalls v2.3.0+ Event Handlers for Assistant
-                @assistant_to_join.on_update(filters.stream_end)
-                async def stream_end_handler(client, update):
+                # ⚡ BULLETPROOF UNIFIED HANDLER: No Filters Required
+                @assistant_to_join.on_update()
+                async def stream_handler(client, update):
                     try:
-                        c_id = update.chat_id if hasattr(update, "chat_id") else update
-                        await self.change_stream(client, c_id)
+                        type_name = type(update).__name__
+                        c_id = getattr(update, "chat_id", update)
+                        
+                        # 1. Chat Updates (Kicked, Left, Closed VC)
+                        if "ChatUpdate" in type_name:
+                            status = str(getattr(update, "status", "")).upper()
+                            if "KICKED" in status or "LEFT" in status or "CLOSED" in status:
+                                await self.stop_stream(c_id)
+                                
+                        # 2. Stream End (Auto-Play Next)
+                        elif "Stream" in type_name and "End" in type_name:
+                            await self.change_stream(client, c_id)
                     except Exception as e:
-                        LOGGER(__name__).error(f"Stream end error: {e}")
-                    
-                @assistant_to_join.on_update(filters.chat_update)
-                async def stream_services_handler(client, update):
-                    try:
-                        status = str(update.status).upper()
-                        if "KICKED" in status or "LEFT" in status or "CLOSED" in status:
-                            await self.stop_stream(update.chat_id)
-                    except:
                         pass
                 
                 self.custom_assistants[user_id] = assistant_to_join
@@ -592,22 +592,23 @@ class Call(PyTgCalls):
         if config.STRING1: await self.one.start()
 
     async def decorators(self):
-        # 🛑 FIX: PyTgCalls v2.3.0+ Event Handlers for Main Client
-        @self.one.on_update(filters.chat_update)
-        async def stream_services_handler(client, update):
+        # ⚡ BULLETPROOF UNIFIED HANDLER for the Main Client
+        @self.one.on_update()
+        async def main_stream_handler(client, update):
             try:
-                status = str(update.status).upper()
-                if "KICKED" in status or "LEFT" in status or "CLOSED" in status:
-                    await self.stop_stream(update.chat_id)
-            except:
-                pass
-
-        @self.one.on_update(filters.stream_end)
-        async def stream_end_handler1(client, update):
-            try:
-                chat_id = update.chat_id if hasattr(update, "chat_id") else update
-                await self.change_stream(client, chat_id)
+                type_name = type(update).__name__
+                c_id = getattr(update, "chat_id", update)
+                
+                # 1. Chat Updates (Kicked, Left, Closed VC)
+                if "ChatUpdate" in type_name:
+                    status = str(getattr(update, "status", "")).upper()
+                    if "KICKED" in status or "LEFT" in status or "CLOSED" in status:
+                        await self.stop_stream(c_id)
+                        
+                # 2. Stream End (Auto-Play Next)
+                elif "Stream" in type_name and "End" in type_name:
+                    await self.change_stream(client, c_id)
             except Exception as e:
-                LOGGER(__name__).error(f"Stream end error: {e}")
+                pass
 
 Lucky = Call()
