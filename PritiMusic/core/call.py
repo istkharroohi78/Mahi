@@ -7,22 +7,15 @@ from typing import Union
 
 from pyrogram import Client
 from pyrogram.types import InlineKeyboardMarkup
-from pytgcalls import PyTgCalls, StreamType
+from pyrogram.enums import ParseMode
+
+from pytgcalls import PyTgCalls
+from pytgcalls.types import Update, MediaStream, AudioQuality, VideoQuality
 from pytgcalls.exceptions import (
     AlreadyJoinedError,
     NoActiveGroupCall,
     TelegramServerError,
 )
-from pytgcalls.types import Update
-from pytgcalls.types.input_stream import AudioPiped, AudioVideoPiped
-from pytgcalls.types.input_stream.quality import (
-    HighQualityAudio, 
-    HighQualityVideo, 
-    MediumQualityVideo, 
-    LowQualityVideo
-)
-from pytgcalls.types.stream import StreamAudioEnded
-from pyrogram.enums import ParseMode
 
 import config
 from PritiMusic import LOGGER, YouTube, app
@@ -100,56 +93,50 @@ class Call(PyTgCalls):
         self.custom_assistants = {} 
         self.active_clients = {} 
 
-    # 🎵 HELPER: HIGH QUALITY AUDIO + AUTO VIDEO (720p Default -> 480p Fallback) FOR CHANGE_STREAM
     async def _safe_change_stream(self, client, chat_id, file_path, video=False, extra_args=""):
         if not video:
-            stream = AudioPiped(file_path, audio_parameters=HighQualityAudio(), additional_ffmpeg_parameters=extra_args)
-            await client.change_stream(chat_id, stream)
+            stream = MediaStream(file_path, audio_parameters=AudioQuality.HIGH, ffmpeg_parameters=extra_args)
+            await client.play(chat_id, stream)
             return
 
         try: 
-            # Default to 720p: Most stable for Telegram Voice Chats
-            stream = AudioVideoPiped(
+            stream = MediaStream(
                 file_path, 
-                audio_parameters=HighQualityAudio(), 
-                video_parameters=MediumQualityVideo(), 
-                additional_ffmpeg_parameters=extra_args
+                audio_parameters=AudioQuality.HIGH, 
+                video_parameters=VideoQuality.HD_720p, 
+                ffmpeg_parameters=extra_args
             )
-            await client.change_stream(chat_id, stream)
+            await client.play(chat_id, stream)
         except Exception as e:
             LOGGER(__name__).warning(f"720p Change Stream failed, auto-switching to 480p: {e}")
-            # Instant fallback to 480p
-            stream = AudioVideoPiped(
+            stream = MediaStream(
                 file_path, 
-                audio_parameters=HighQualityAudio(), 
-                video_parameters=LowQualityVideo(), 
-                additional_ffmpeg_parameters=extra_args
+                audio_parameters=AudioQuality.HIGH, 
+                video_parameters=VideoQuality.SD_480p, 
+                ffmpeg_parameters=extra_args
             )
-            await client.change_stream(chat_id, stream)
+            await client.play(chat_id, stream)
 
-    # 🎵 HELPER: HIGH QUALITY AUDIO + AUTO VIDEO (720p Default -> 480p Fallback) FOR JOIN_CALL
     async def _safe_join_call(self, assistant_to_join, chat_id, file_path, video=False):
         if not video:
-            stream = AudioPiped(file_path, audio_parameters=HighQualityAudio())
-            return await assistant_to_join.join_group_call(chat_id, stream, stream_type=StreamType().pulse_stream)
+            stream = MediaStream(file_path, audio_parameters=AudioQuality.HIGH)
+            return await assistant_to_join.play(chat_id, stream)
 
         try: 
-            # Default to 720p
-            stream = AudioVideoPiped(
+            stream = MediaStream(
                 file_path, 
-                audio_parameters=HighQualityAudio(), 
-                video_parameters=MediumQualityVideo()
+                audio_parameters=AudioQuality.HIGH, 
+                video_parameters=VideoQuality.HD_720p
             )
-            await assistant_to_join.join_group_call(chat_id, stream, stream_type=StreamType().pulse_stream)
+            await assistant_to_join.play(chat_id, stream)
         except Exception as e:
             LOGGER(__name__).warning(f"720p Join Call failed, auto-switching to 480p: {e}")
-            # Instant fallback to 480p
-            stream = AudioVideoPiped(
+            stream = MediaStream(
                 file_path, 
-                audio_parameters=HighQualityAudio(), 
-                video_parameters=LowQualityVideo()
+                audio_parameters=AudioQuality.HIGH, 
+                video_parameters=VideoQuality.SD_480p
             )
-            await assistant_to_join.join_group_call(chat_id, stream, stream_type=StreamType().pulse_stream)
+            await assistant_to_join.play(chat_id, stream)
 
 
     async def get_active_clients(self, chat_id):
@@ -284,10 +271,16 @@ class Call(PyTgCalls):
             else:
                 assistant_to_join = PyTgCalls(userbot, cache_duration=100)
                 await assistant_to_join.start()
+                
+                # 🛑 FIX: Bulletproof Stream End Fallback
                 @assistant_to_join.on_stream_end()
-                async def stream_end_handler(client, update: Update):
-                    if not isinstance(update, StreamAudioEnded): return
-                    await self.change_stream(client, update.chat_id)
+                async def stream_end_handler(client, update):
+                    try:
+                        c_id = update.chat_id if hasattr(update, "chat_id") else update
+                        await self.change_stream(client, c_id)
+                    except Exception as e:
+                        LOGGER(__name__).error(f"Stream end error: {e}")
+                    
                 @assistant_to_join.on_kicked()
                 @assistant_to_join.on_closed_voice_chat()
                 @assistant_to_join.on_left()
@@ -310,6 +303,7 @@ class Call(PyTgCalls):
         except NoActiveGroupCall: raise AssistantErr(_["call_8"])
         except AlreadyJoinedError: raise AssistantErr(_["call_9"])
         except TelegramServerError: raise AssistantErr(_["call_10"])
+        except Exception as e: raise AssistantErr(f"Join Call Error: {e}")
         
         await add_active_chat(chat_id)
         await music_on(chat_id)
@@ -336,7 +330,6 @@ class Call(PyTgCalls):
             
             if popped: await auto_clean(popped)
             
-            # Autoplay Core Implementation
             if not check:
                 from PritiMusic.utils.database.autoplay import is_autoplay_group
                 auto_on = await is_autoplay_group(chat_id)
@@ -473,7 +466,6 @@ class Call(PyTgCalls):
             except: pass
             return
 
-        # Play Next Track
         if db.get(chat_id):
             queued = db[chat_id][0]["file"]
             language = await get_lang(chat_id)
@@ -609,9 +601,13 @@ class Call(PyTgCalls):
         async def stream_services_handler(_, chat_id: int):
             await self.stop_stream(chat_id)
 
+        # 🛑 FIX: Bulletproof Stream End Fallback
         @self.one.on_stream_end()
-        async def stream_end_handler1(client, update: Update):
-            if not isinstance(update, StreamAudioEnded): return
-            await self.change_stream(client, update.chat_id)
+        async def stream_end_handler1(client, update):
+            try:
+                chat_id = update.chat_id if hasattr(update, "chat_id") else update
+                await self.change_stream(client, chat_id)
+            except Exception as e:
+                LOGGER(__name__).error(f"Stream end error: {e}")
 
 Lucky = Call()
