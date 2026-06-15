@@ -17,12 +17,14 @@ async def put_queue(
     user_id,
     stream,
     forceplay: Union[bool, str] = None,
+    source: str = "youtube", # 🟢 PREP: Ready for Spotify/AppleMusic/SoundCloud fallback
 ):
     title = title.title()
     try:
         duration_in_seconds = time_to_seconds(duration) - 3
     except:
         duration_in_seconds = 0
+        
     put = {
         "title": title,
         "dur": duration,
@@ -34,16 +36,18 @@ async def put_queue(
         "vidid": vidid,
         "seconds": duration_in_seconds,
         "played": 0,
+        "source": source, 
     }
+    
+    # 🚀 THE FIX: Prevent KeyError on first song queue
+    if chat_id not in db:
+        db[chat_id] = []
+        
     if forceplay:
-        check = db.get(chat_id)
-        if check:
-            check.insert(0, put)
-        else:
-            db[chat_id] = []
-            db[chat_id].append(put)
+        db[chat_id].insert(0, put)
     else:
         db[chat_id].append(put)
+        
     autoclean.append(file)
 
 
@@ -57,6 +61,7 @@ async def put_queue_index(
     vidid,
     stream,
     forceplay: Union[bool, str] = None,
+    source: str = "index_url", 
 ):
     if "20.212.146.162" in vidid:
         try:
@@ -69,23 +74,26 @@ async def put_queue_index(
             dur = 0
     else:
         dur = 0
+        
     put = {
         "title": title,
         "dur": duration,
         "streamtype": stream,
         "by": user,
+        "user_id": 0, # 🚀 THE FIX: Added fallback user_id to prevent UI crash
         "chat_id": original_chat_id,
         "file": file,
         "vidid": vidid,
         "seconds": dur,
         "played": 0,
+        "source": source,
     }
+    
+    # 🚀 THE FIX: Prevent KeyError on first song queue
+    if chat_id not in db:
+        db[chat_id] = []
+        
     if forceplay:
-        check = db.get(chat_id)
-        if check:
-            check.insert(0, put)
-        else:
-            db[chat_id] = []
-            db[chat_id].append(put)
+        db[chat_id].insert(0, put)
     else:
         db[chat_id].append(put)
