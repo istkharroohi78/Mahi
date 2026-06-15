@@ -19,7 +19,7 @@ def get_style_map():
     # Row me buttons ke hisaab se random color assign hoga
     return {1: styles[0], 2: styles[1], 3: styles[2]}
 
-# 🔘 Smart Button Creator (Optimized for Kaurigram)
+# 🔘 Smart Button Creator (Now with user_id support)
 def create_btn(text, cb=None, url=None, user_id=None, style=ButtonStyle.PRIMARY, no_emoji=False):
     kwargs = {"text": text, "style": style}
     if cb: kwargs["callback_data"] = cb
@@ -77,7 +77,7 @@ def private_panel(_):
                 style=s_map[2]
             ),
             create_btn(
-                text="sᴏᴜʀᴄᴇ", 
+                text=" sᴏᴜʀᴄᴇ", 
                 cb="gib_source", 
                 style=s_map[2]
             )
