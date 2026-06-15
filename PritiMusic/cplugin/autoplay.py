@@ -1,5 +1,6 @@
+import random
 from pyrogram import Client, filters
-from pyrogram.enums import ChatMemberStatus
+from pyrogram.enums import ChatMemberStatus, ButtonStyle
 from pyrogram.errors import MessageNotModified
 from pyrogram.types import (
     Message,
@@ -19,6 +20,13 @@ from config import BANNED_USERS
 
 AUTOPLAY_BANNER = "https://files.catbox.moe/6r97s4.jpg"
 
+# 🔥 PREMIUM EMOJIS LIST 🔥
+PREMIUM_EMOJIS = [
+    "5422831825178206894", 
+    "5368324170673489600",
+    "5206607081334906820",
+    "5206380668048496464"
+]
 
 def autoplay_panel_markup(chat_id: int, enabled: bool):
     status = "🟢 𝐄ɴᴀʙʟᴇᴅ" if enabled else "🔴 𝐃ɪsᴀʙʟᴇᴅ"
@@ -27,18 +35,24 @@ def autoplay_panel_markup(chat_id: int, enabled: bool):
         [
             [
                 InlineKeyboardButton(
-                    "🟢 𝐀ᴜᴛᴏ 𝐏ʟᴀʏ 𝐄ɴᴀʙʟᴇ",
+                    "𝐀ᴜᴛᴏ 𝐏ʟᴀʏ 𝐄ɴᴀʙʟᴇ",
                     callback_data=f"AUTOPLAY_ENABLE|{chat_id}",
+                    style=ButtonStyle.SUCCESS,
+                    icon_custom_emoji_id=random.choice(PREMIUM_EMOJIS)
                 ),
                 InlineKeyboardButton(
-                    "🔴 𝐀ᴜᴛᴏ 𝐏ʟᴀʏ 𝐃ɪsᴀʙʟᴇ",
+                    "𝐀ᴜᴛᴏ 𝐏ʟᴀʏ 𝐃ɪsᴀʙʟᴇ",
                     callback_data=f"AUTOPLAY_DISABLE|{chat_id}",
+                    style=ButtonStyle.DANGER,
+                    icon_custom_emoji_id=random.choice(PREMIUM_EMOJIS)
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    f"⚡ 𝐀ᴜᴛᴏ 𝐏ʟᴀʏ : {status}",
+                    f"𝐀ᴜᴛᴏ 𝐏ʟᴀʏ : {status}",
                     callback_data="AUTOPLAY_STATUS",
+                    style=ButtonStyle.PRIMARY,
+                    icon_custom_emoji_id=random.choice(PREMIUM_EMOJIS)
                 )
             ],
         ]
