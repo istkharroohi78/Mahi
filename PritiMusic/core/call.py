@@ -216,8 +216,8 @@ class Call(PyTgCalls):
         for idx, assistant in enumerate(all_assistants):
             if assistant:
                 try: 
-                    # 🟢 UPDATED FIX: Direct leave() method 
-                    await assistant.leave(chat_id)
+                    # 🟢 UPDATED FIX: leave_call() method 
+                    await assistant.leave_call(chat_id)
                     LOGGER(__name__).info(f"✅ Assistant {idx+1} left VC successfully.")
                 except Exception as e: 
                     error_msg = str(e).lower()
@@ -237,8 +237,8 @@ class Call(PyTgCalls):
         for idx, assistant in enumerate(all_assistants):
             if assistant:
                 try: 
-                    # 🟢 UPDATED FIX: Direct leave() method
-                    await assistant.leave(chat_id)
+                    # 🟢 UPDATED FIX: leave_call() method
+                    await assistant.leave_call(chat_id)
                 except Exception as e: 
                     error_msg = str(e).lower()
                     if "not in a call" not in error_msg and "not active" not in error_msg:
@@ -445,7 +445,7 @@ class Call(PyTgCalls):
             if not db.get(chat_id): 
                 await _clear_(chat_id)
                 if chat_id in self.active_clients: del self.active_clients[chat_id]
-                try: await client.leave(chat_id) 
+                try: await client.leave_call(chat_id) 
                 except: pass
                 return
 
@@ -453,7 +453,7 @@ class Call(PyTgCalls):
             LOGGER(__name__).error(f"Error in change_stream core: {e}")
             await _clear_(chat_id)
             if chat_id in self.active_clients: del self.active_clients[chat_id]
-            try: await client.leave(chat_id) 
+            try: await client.leave_call(chat_id) 
             except: pass
             return
 
