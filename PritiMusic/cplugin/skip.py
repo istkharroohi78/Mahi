@@ -6,7 +6,7 @@ from pyrogram.enums import ChatMemberStatus
 import config
 from PritiMusic import app
 from PritiMusic.core.call import Lucky
-from PritiMusic.misc import db
+from PritiMusic.misc import db, SUDOERS # ✅ Yahan SUDOERS add kar diya gaya hai
 
 # ✅ Imports Updated
 from PritiMusic.utils.database import get_loop
@@ -15,8 +15,7 @@ from PritiMusic.utils.inline import close_markup
 from PritiMusic.utils.stream.autoclear import auto_clean
 from config import BANNED_USERS
 
-# 🟢 THE FIX 1: @app.on_message ko @Client.on_message se replace kiya
-# Isse Main Bot aur Clone Bot DONO is command ko sunenge!
+# 🟢 THE FIX 1: @Client.on_message Clone bots ke liye ekdum sahi hai
 @Client.on_message(
     filters.command(["skip", "cskip", "next", "cnext"], prefixes=["/", "!", "%", ",", ".", "@", "#"])
     & filters.group 
@@ -28,7 +27,7 @@ async def skip_comm(cli: Client, message: Message, _, chat_id):
     # 🟢 THE FIX 2: BULLETPROOF ADMIN CHECK
     # Agar decorator fail ho jaye, toh yeh manual check kisi bhi aam user ko rok dega.
     user_id = message.from_user.id
-    if user_id not in config.SUDOERS:
+    if user_id not in SUDOERS: # ✅ config.SUDOERS hata kar sirf SUDOERS kar diya
         try:
             member = await cli.get_chat_member(chat_id, user_id)
             if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
