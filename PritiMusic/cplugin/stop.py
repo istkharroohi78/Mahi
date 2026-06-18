@@ -1,8 +1,9 @@
 from pyrogram import filters, Client
 from pyrogram.types import Message
-from pyrogram.enums import ChatMemberStatus # 🟢 Zaroori Import
+from pyrogram.enums import ChatMemberStatus 
 
-import config # 🟢 Zaroori Import
+import config 
+from PritiMusic import app # 🟢 Main bot ko pehchanne ke liye zaroori import
 from PritiMusic.core.call import Lucky
 from PritiMusic.utils.database import set_loop
 from PritiMusic.utils.inline import close_markup
@@ -20,14 +21,21 @@ from PritiMusic.cplugin.utils.decorators.admins import AdminRightsCheck
     & filters.group
     & ~BANNED_USERS
 )
-@AdminRightsCheck # <-- Ab ye Clone Owner/Sudo ko allow karega
+@AdminRightsCheck 
 async def stop_music(cli: Client, message: Message, _, chat_id):
     
-    # 🟢 BULLETPROOF ADMIN CHECK (SUDOERS crash completely removed)
+    # 🛑 THE CLASH FIX (CLONE BOT): Agar command Main Bot pe aayi hai, toh Clone bot chup rahega!
+    try:
+        if cli.me.id == app.id:
+            return
+    except Exception:
+        pass
+
+    # 🟢 PURE GROUP ADMIN CHECK (No SUDOERS)
     try:
         member = await cli.get_chat_member(chat_id, message.from_user.id)
         if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
-            return await message.reply_text("❌ **Sirf Admins he is command ko use kar sakte hain!**")
+            return await message.reply_text("❌ **Sirf Admins hi is command ko use kar sakte hain!**")
     except Exception:
         return await message.reply_text("❌ **Error: Admin rights verify nahi ho paye.**")
 
