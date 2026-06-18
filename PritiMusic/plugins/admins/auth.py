@@ -20,6 +20,14 @@ from config import BANNED_USERS, adminlist
 )
 @AdminActual
 async def auth(client, message: Message, _):
+    
+    # 🛑 THE CLASH FIX (MAIN BOT): Agar command Clone Bot pe aayi hai, toh ignore karo!
+    try:
+        if client.me.id != app.id:
+            return
+    except Exception:
+        pass
+
     if not message.reply_to_message:
         if len(message.command) != 2:
             return await message.reply_text(_["general_1"])
@@ -63,6 +71,14 @@ async def auth(client, message: Message, _):
 )
 @AdminActual
 async def unauthusers(client, message: Message, _):
+    
+    # 🛑 THE CLASH FIX (MAIN BOT)
+    try:
+        if client.me.id != app.id:
+            return
+    except Exception:
+        pass
+
     if not message.reply_to_message:
         if len(message.command) != 2:
             return await message.reply_text(_["general_1"])
@@ -91,6 +107,14 @@ async def unauthusers(client, message: Message, _):
 )
 @language
 async def authusers(client, message: Message, _):
+    
+    # 🛑 THE CLASH FIX (MAIN BOT)
+    try:
+        if client.me.id != app.id:
+            return
+    except Exception:
+        pass
+
     _wtf = await get_authuser_names(message.chat.id)
     if not _wtf:
         return await message.reply_text(_["setting_4"])
