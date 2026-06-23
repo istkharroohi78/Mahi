@@ -15,8 +15,21 @@ from youtubesearchpython.__future__ import VideosSearch, Playlist
 DOWNLOAD_DIR = "downloads"
 LOGGER = logging.getLogger(__name__)
 
-API_URL = os.environ.get("API_URL", "https://web.riteshyt.in")
-API_KEY = os.environ.get("API_KEY", "ritesh_free_6361d74f047ed86015df3fa8")
+# --- API 1: Shruti ---
+API_URL = os.environ.get("SHRUTI_API_URL" = "https://api.shrutibots.site")
+API_KEY = os.environ.get("SHRUTI_API_KEY" = "ShrutiBotsC0WH1GowF2HkGoKv4F3y")
+
+# --- API 2: Xbit ---
+YTPROXY_URL = os.getenv("YTPROXY_URL", "https://tgapi.xbitcode.com")
+YT_API_KEY = os.getenv("YT_API_KEY" , "xbit_kp3GFnAvdnFVDV3L6xACy-jbVBE5q5Cd")
+
+# --- API 3: Worker ---
+WORKER_FALLBACK_API_URL = os.getenv("WORKER_FALLBACK_API_URL", "https://youtubenewapi.skybotsdeveloper.workers.dev")
+WORKER_FALLBACK_API_KEY = os.getenv("WORKER_FALLBACK_API_KEY", "itsmesid")
+
+# --- API 4: Inflex ---
+INFLEX_API_URL = os.getenv("INFLEX_API_URL", "https://teaminflex.xyz")
+INFLEX_API_KEY = os.getenv("INFLEX_API_KEY", "INFLEX40920628D")
 
 def time_to_seconds(time_str):
     stringt = str(time_str)
@@ -45,10 +58,42 @@ async def _async_run(func, *args, **kwargs):
 
 # ----------------- DOWNLOADERS -----------------
 
-async def api_download(video_id: str, download_type: str, title: str = None) -> str:
-    if not API_URL or not API_KEY:
-        return None
+# ⚡ CONCURRENT API RACING (With Anti-Hang System)
+async def single_api_download(api_name: str, req_url: str, params: dict, final_path: str) -> str:
+    """Downloads from a single API with STRICT timeouts to prevent hanging."""
+    temp_path = f"{final_path}_{api_name.replace(' ', '')}.tmp"
+    
+    # 🟢 ANTI-HANG TIMEOUTS:
+    # connect=3: Maximum 3 seconds to connect.
+    # sock_read=5: Agar download karte time API atak gayi (5s tak koi data nahi aaya), toh instant kill.
+    # total=120: Maximum 2 mins per API.
+    strict_timeout = aiohttp.ClientTimeout(total=120, connect=3, sock_read=5)
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(req_url, params=params, timeout=strict_timeout) as resp:
+                if resp.status == 200:
+                    with open(temp_path, "wb") as f:
+                        async for chunk in resp.content.iter_chunked(131072):
+                            f.write(chunk)
+                    
+                    if os.path.exists(temp_path) and os.path.getsize(temp_path) > 0:
+                        if not os.path.exists(final_path):  # Check if another API already won
+                            os.rename(temp_path, final_path)
+                            LOGGER.info(f"⚡ FASTEST API WON: {api_name} downloaded the file first!")
+                            return final_path
+    except asyncio.TimeoutError:
+        LOGGER.warning(f"⏳ {api_name} atak gaya (Timeout)! Instantly shifting to others...")
+    except Exception as e:
+        LOGGER.debug(f"❌ {api_name} failed: {e}")
+    finally:
+        if os.path.exists(temp_path):
+            try: os.remove(temp_path)
+            except: pass
+    return None
 
+async def race_all_apis(video_id: str, download_type: str, title: str) -> str:
+    """Starts all APIs at the exact same time and returns whichever finishes first."""
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     filename = get_safe_filename(title, video_id)
     ext = "mp4" if download_type == "video" else "mp3"
@@ -57,30 +102,47 @@ async def api_download(video_id: str, download_type: str, title: str = None) -> 
     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
         return file_path
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{API_URL}/download",
-                params={"url": video_id, "type": "audio" if download_type == "audio" else "video", "api_key": API_KEY},
-                timeout=aiohttp.ClientTimeout(total=600)
-            ) as resp:
-                if resp.status != 200:
-                    LOGGER.error(f"API Error: Status {resp.status}")
-                    return None
-                
-                with open(file_path, "wb") as f:
-                    async for chunk in resp.content.iter_chunked(131072):
-                        f.write(chunk)
-                        
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-            return file_path
+    type_param = "audio" if download_type == "audio" else "video"
+    tasks = []
+
+    if API_URL and API_KEY:
+        tasks.append(asyncio.create_task(single_api_download(
+            "ShrutiAPI", f"{API_URL}/download", 
+            {"url": video_id, "type": type_param, "api_key": API_KEY}, file_path
+        )))
+        
+    if YTPROXY_URL and YT_API_KEY:
+        tasks.append(asyncio.create_task(single_api_download(
+            "XbitAPI", f"{YTPROXY_URL}/download", 
+            {"url": video_id, "type": type_param, "api_key": YT_API_KEY}, file_path
+        )))
+        
+    if WORKER_FALLBACK_API_URL and WORKER_FALLBACK_API_KEY:
+        tasks.append(asyncio.create_task(single_api_download(
+            "WorkerAPI", f"{WORKER_FALLBACK_API_URL}/download", 
+            {"url": video_id, "type": type_param, "api_key": WORKER_FALLBACK_API_KEY}, file_path
+        )))
+
+    if INFLEX_API_URL and INFLEX_API_KEY:
+        tasks.append(asyncio.create_task(single_api_download(
+            "InflexAPI", f"{INFLEX_API_URL}/download", 
+            {"url": video_id, "type": type_param, "api_key": INFLEX_API_KEY}, file_path
+        )))
+
+    if not tasks:
         return None
-    except Exception as e:
-        LOGGER.error(f"Shruti API Download Error: {e}")
-        if os.path.exists(file_path):
-            try: os.remove(file_path)
-            except: pass
-        return None
+
+    # Wait for the first API to finish downloading successfully
+    for completed_task in asyncio.as_completed(tasks):
+        result = await completed_task
+        if result:
+            # Cancel the slower tasks immediately to save bandwidth
+            for t in tasks:
+                if not t.done():
+                    t.cancel()
+            return result
+
+    return None
 
 async def ytdl_fallback_download(link: str, download_type: str, title: str = None) -> str:
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
@@ -99,7 +161,7 @@ async def ytdl_fallback_download(link: str, download_type: str, title: str = Non
         'outtmpl': file_path,
         'quiet': True,
         'no_warnings': True,
-        'cookiefile': 'cookies.txt', # 🟢 Cookies enabled here
+        'cookiefile': 'cookies.txt',
         'extractor_args': {'youtube': ['player_client=ios,tv_embedded']}, 
         'geo_bypass': True,
         'nocheckcertificate': True,
@@ -226,19 +288,19 @@ async def download_song(link: str, title: str = None) -> str:
         except Exception:
             pass
 
-    # 🟢 1ST PRIORITY: yt-dlp with cookies.txt
-    LOGGER.info(f"Attempting download with yt-dlp (cookies) for: {title}")
+    # 🟢 1ST PRIORITY: RACE ALL APIS (Fastest out of 4 wins)
+    LOGGER.info(f"Racing all APIs for the fastest download: {title}")
+    api_result = await race_all_apis(video_id, "audio", title)
+    if api_result: return api_result
+
+    # 🟡 2ND PRIORITY: yt-dlp with cookies.txt
+    LOGGER.warning(f"All APIs failed or timed out. Falling back to yt-dlp for: {title}")
     yt_result = await ytdl_fallback_download(link, "audio", title)
     if yt_result: return yt_result
     
-    # 🟡 2ND PRIORITY: API Fallback (Shruti Bots API)
-    LOGGER.warning(f"yt-dlp failed. Falling back to Fast API for: {title}")
-    api_result = await api_download(video_id, "audio", title)
-    if api_result: return api_result
-    
     # 🔴 3RD PRIORITY: Source-Hopping (Spotify, JioSaavn, SoundCloud)
     if title:
-        LOGGER.warning(f"🔴 YouTube & API blocked '{title}'. Hopping to Spotify...")
+        LOGGER.warning(f"🔴 YouTube blocked '{title}'. Hopping to Spotify...")
         sp_result = await spotify_fallback_download(title)
         if sp_result: return sp_result
 
@@ -266,15 +328,15 @@ async def download_video(link: str, title: str = None) -> str:
         except:
             pass
 
-    # 🟢 1ST PRIORITY: yt-dlp with cookies.txt
-    LOGGER.info(f"Attempting video download with yt-dlp (cookies) for: {title}")
+    # 🟢 1ST PRIORITY: RACE ALL APIS
+    LOGGER.info(f"Racing APIs for video download: {title}")
+    api_result = await race_all_apis(video_id, "video", title)
+    if api_result: return api_result
+
+    # 🟡 2ND PRIORITY: yt-dlp
+    LOGGER.warning(f"APIs failed. Falling back to yt-dlp video download for: {title}")
     yt_result = await ytdl_fallback_download(link, "video", title)
     if yt_result: return yt_result
-
-    # 🟡 2ND PRIORITY: API Fallback
-    LOGGER.warning(f"yt-dlp failed. Falling back to Fast API video download for: {title}")
-    api_result = await api_download(video_id, "video", title)
-    if api_result: return api_result
 
     return None
 
