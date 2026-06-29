@@ -65,6 +65,15 @@ FORCE_JOIN_LINKS = [
     "https://t.me/betabot_support",
 ]
 
+# ==========================================
+# 🎵 CUSTOM ASSETS BY THE SHIV (MAHIMUSIC)
+# ==========================================
+# Paste your direct video/audio URL for the startup intro here
+STARTUP_VOICE_URL = "https://files.catbox.moe/2b5dou.mp3" 
+# Paste your direct video/audio URL for the waiting tune here
+WAITING_TUNE_URL = "https://files.catbox.moe/vvz71y.m4a" 
+# ==========================================
+
 def get_random_img(img_list):
     if img_list:
         if isinstance(img_list, list):
@@ -384,7 +393,21 @@ class Call(PyTgCalls):
             self.active_clients[chat_id].append(assistant_to_join)
             
         try:
-            await self._safe_join_call(assistant_to_join, chat_id, link, video)
+            # 🎙️ [THE SHIV] STARTUP VOICE LOGIC HERE
+            # Check if STARTUP_VOICE_URL is valid, otherwise fallback directly to requested song
+            if STARTUP_VOICE_URL.startswith("http"):
+                LOGGER(__name__).info(f"Playing MahiMusic Startup Voice in {chat_id}")
+                # volume filter to make it loud and sweet
+                await self._safe_join_call(assistant_to_join, chat_id, STARTUP_VOICE_URL, video=False)
+                
+                # Wait for 5 seconds for intro to finish (Change 5.0 to however long your intro clip is)
+                await asyncio.sleep(5.0) 
+                
+                # Now play the actual requested media
+                await self._safe_change_stream(assistant_to_join, chat_id, link, video)
+            else:
+                await self._safe_join_call(assistant_to_join, chat_id, link, video)
+                
         except Exception as e:
             raise AssistantErr(f"VC Error: {e} - (Please check if Voice Chat is turned on in the group)")
             
@@ -403,7 +426,6 @@ class Call(PyTgCalls):
                 pass
 
     async def change_stream(self, client, chat_id):
-        # 🟢 Client Targeting Fixed here
         if client is None:
             active_assistants = await self.get_active_clients(chat_id)
             client = active_assistants[0] if active_assistants else self.one
@@ -467,7 +489,7 @@ class Call(PyTgCalls):
                                 "Bhojpuri": ["bhojpuri latest single video song", "bhojpuri trending song official", "bhojpuri hit dj remix"],
                                 "Haryanvi": ["haryanvi single track official", "latest haryanvi video song", "haryanvi dj hit pop"],
                                 "Tamil": ["tamil latest single official video", "kollywood trending song lyrical", "tamil hit movie track"],
-                                "Telugu": ["telugu tollywood latest single song", "telugu lyrical video official", "telugu trending track"],
+                                "Telugu": ["telugu tollywood latest single single song", "telugu lyrical video official", "telugu trending track"],
                                 "English": ["english pop single official music video", "trending english lyrical song", "global hit english track"]
                             }
                             search_query = random.choice(lang_pools[detected_lang])
@@ -568,6 +590,16 @@ class Call(PyTgCalls):
                     pass
             elif "vid_" in queued:
                 mystic = await chat_client.send_message(original_chat_id, _["call_7"])
+                
+                # 🎵 [THE SHIV] WAITING TUNE LOGIC HERE
+                # Streams the waiting tune directly from your URL while the bot downloads the song
+                if WAITING_TUNE_URL.startswith("http"):
+                    try:
+                        LOGGER(__name__).info(f"Downloading track for {chat_id}, playing waiting tune...")
+                        await self._safe_change_stream(client, chat_id, WAITING_TUNE_URL, video=False)
+                    except Exception as wait_e:
+                        LOGGER(__name__).warning(f"⚠️ MahiMusic Waiting tune failed: {wait_e}")
+                
                 try:
                     file_path, direct = await YouTube.download(videoid, mystic, videoid=True, video=video)
                 except:
@@ -590,6 +622,7 @@ class Call(PyTgCalls):
                     return await self.change_stream(client, chat_id)
                     
                 try:
+                    # After download finishes, it plays the real song (replacing waiting tune automatically)
                     await self._safe_change_stream(client, chat_id, file_path, video)
                 except:
                     return await chat_client.send_message(original_chat_id, text=_["call_6"])
