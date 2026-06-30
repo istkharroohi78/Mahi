@@ -11,15 +11,15 @@ buttons = InlineKeyboardMarkup(
             styled_button(text="▢", callback_data="end_cb", style=ButtonStyle.DANGER),
         ],
         [
-            styled_button(text="『 ✦ 𝐂ʟᴏηє 𝐌є ✦ 』", url="https://t.me/clone_MUSICrobot", style=ButtonStyle.SUCCESS)
+            styled_button(text="『 ✦ 𝐂ʟᴏηє 𝐌є ✦ 』", url="https://t.me/@clone_MUSICrobot", style=ButtonStyle.SUCCESS)
         ],
     ]
 )
 
 close_key = InlineKeyboardMarkup(
     [
+        # "Add me" hata diya gaya hai, ab sirf Close bacha hai
         [
-            styled_button(text="『 ♡ 𝐀ᴅᴅ 𝐌є 𝐁ᴀʙʏ ♡ 』", url="https://t.me/clone_MUSICrobot?startgroup=true", style=ButtonStyle.SUCCESS),
             styled_button(text="✯ CLOSE ✯", callback_data="close", style=ButtonStyle.DANGER)
         ]
     ]
@@ -36,21 +36,16 @@ def stream_markup(chat_id):
                 styled_button(text="‣‣I", callback_data=f"ADMIN Skip|{chat_id}", style=ButtonStyle.PRIMARY),
                 styled_button(text="▢", callback_data=f"ADMIN Stop|{chat_id}", style=ButtonStyle.DANGER),
             ],
-            # Middle Row: Seek, Loop & Shuffle
+            # Middle Row: Seek Buttons
             [
                 styled_button(text="<- 20s", callback_data=f"ADMIN SeekBack|{chat_id}", style=ButtonStyle.PRIMARY),
-                styled_button(text="🔁", callback_data=f"ADMIN Loop|{chat_id}", style=ButtonStyle.PRIMARY),
-                styled_button(text="🔀", callback_data=f"ADMIN Shuffle|{chat_id}", style=ButtonStyle.PRIMARY),
                 styled_button(text="20s + ->", callback_data=f"ADMIN SeekForward|{chat_id}", style=ButtonStyle.PRIMARY),
             ],
-            # Bottom Row 1: Clone
+            # Bottom Row: Clone & Close merged (Space bachane ke liye!)
             [
-                styled_button(text="『 ✦ 𝐂ʟᴏηє 𝐌є ✦ 』", url="https://t.me/clone_MUSICrobot", style=ButtonStyle.SUCCESS)
-            ],
-            # Bottom Row 2: Add Me & Close
-            [
-                styled_button(text="『 ♡ 𝐀ᴅᴅ 𝐌є 𝐁ᴀʙʏ ♡ 』", url="https://t.me/clone_MUSICrobot?startgroup=true", style=ButtonStyle.SUCCESS),
+                styled_button(text="『 ✦ 𝐂ʟᴏηє 𝐌є ✦ 』", url="https://t.me/clone_MUSICrobot", style=ButtonStyle.SUCCESS),
                 styled_button(text="✯ CLOSE ✯", callback_data="close", style=ButtonStyle.DANGER)
             ]
         ]
     )
+    
