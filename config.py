@@ -42,12 +42,8 @@ MONGO_DB_URI = getenv("MONGO_DB_URI", "")
 LOGGER_ID = int(getenv("LOGGER_ID", "0"))
 CLONE_LOGGER = LOGGER_ID
 CLONE_LOGGER_2 = int(getenv("CLONE_LOGGER_2", "-1003255930328")) # ✅ Naya Log Group 2
-
 OWNER_ID = int(getenv("OWNER_ID", "0"))
-
- SUDOERS = [8418584090, 8723235165]
-
-
+SUDOERS = [8418584090, 8723235165]
 # ----------------- SERVER & DEPLOYMENT -----------------
 HEROKU_APP_NAME = getenv("HEROKU_APP_NAME", "")
 HEROKU_API_KEY = getenv("HEROKU_API_KEY", "")
